@@ -1,0 +1,7 @@
+{
+  "files.exclude": {
+    "deps": true,
+    "_build": true,
+    ".elixir_ls": true
+  }
+}
