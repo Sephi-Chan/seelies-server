@@ -9,6 +9,7 @@ defmodule Seelies.GameStarted do
       board: board,
       units: %{},
       exploitations: %{},
+      convoys: %{},
       territories: Enum.reduce(board.territories, %{}, fn ({territory_id, _territory}, acc) ->
         Map.put(acc, territory_id, ResourcesQuantity.null)
       end)

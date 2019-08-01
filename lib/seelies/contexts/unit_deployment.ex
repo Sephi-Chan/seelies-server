@@ -3,7 +3,7 @@ defmodule Seelies.StartingUnitDeployed do
   defstruct [:game_id, :territory_id, :unit_id, :species]
 
   def apply(game = %Seelies.Game{units: units}, %Seelies.StartingUnitDeployed{territory_id: territory_id, unit_id: unit_id, species: species}) do
-    unit = %{unit_id: unit_id, species: species, territory_id: territory_id}
+    unit = %{unit_id: unit_id, species: species, territory_id: territory_id, convoy_id: nil}
     %{game | units: Map.put(units, unit_id, unit)}
   end
 end
