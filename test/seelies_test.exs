@@ -7,6 +7,17 @@ defmodule SeeliesTest do
   end
 
 
+  test "Resources can be added to a territory" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.AddResources{game_id: "42", territory_id: "t1", quantity: %{silver: 500, gold: 100}})
+
+    game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, "42")
+    assert Seelies.Game.resources(game, "t1").gold == 100
+    assert Seelies.Game.resources(game, "t1").silver == 500
+    assert Seelies.Game.resources(game, "t1").bronze == 0
+  end
+
+
   def board() do
     alias Seelies.Board
     Board.new()

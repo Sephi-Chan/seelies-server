@@ -6,6 +6,7 @@ defmodule Seelies.Router do
   dispatch(
     [
       Seelies.StartGame,
+      Seelies.AddResources,
       Seelies.DeployStartingUnit,
       Seelies.UnitStartsExploitingDeposit,
       Seelies.UnitStopsExploitingDeposit,
