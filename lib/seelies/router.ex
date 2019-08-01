@@ -14,6 +14,8 @@ defmodule Seelies.Router do
       Seelies.PrepareConvoy,
       Seelies.UnitJoinsConvoy,
       Seelies.UnitLeavesConvoy,
+      Seelies.LoadResourcesIntoConvoy,
+      Seelies.UnloadResourcesFromConvoy
     ],
     to: Seelies.Game,
     identity: :game_id

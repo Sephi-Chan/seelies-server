@@ -3,7 +3,8 @@ defmodule Seelies.ConvoyReadied do
   defstruct [:game_id, :convoy_id, :territory_id]
 
   def apply(game = %Seelies.Game{convoys: convoys}, %Seelies.ConvoyReadied{convoy_id: convoy_id, territory_id: territory_id}) do
-    %{game | convoys: Map.put(convoys, convoy_id, %{territory_id: territory_id, unit_ids: []})}
+    convoy = %{territory_id: territory_id, unit_ids: [], resources: Seelies.ResourcesQuantity.null}
+    %{game | convoys: Map.put(convoys, convoy_id, convoy)}
   end
 end
 
@@ -92,5 +93,65 @@ defmodule Seelies.UnitLeavesConvoy do
         %Seelies.UnitLeftConvoy{game_id: game_id, convoy_id: convoy_id, unit_id: unit_id}
     end
 
+  end
+end
+
+
+defmodule Seelies.ResourcesLoadedIntoConvoy do
+  @derive Jason.Encoder
+  defstruct [:game_id, :convoy_id, :resources]
+
+  def apply(game = %Seelies.Game{game_id: game_id, convoys: convoys, territories: territories}, %Seelies.ResourcesLoadedIntoConvoy{game_id: game_id, convoy_id: convoy_id, resources: resources}) do
+    %{game |
+      convoys: update_in(convoys, [convoy_id, :resources], fn (carried_resources) -> Seelies.ResourcesQuantity.add(carried_resources, resources) end),
+      territories: update_in(territories, [convoys[convoy_id].territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.substract(stored_resources, resources) end)}
+  end
+end
+
+
+defmodule Seelies.LoadResourcesIntoConvoy do
+  defstruct [:game_id, :resources, :convoy_id]
+
+  def execute(%Seelies.Game{game_id: game_id, convoys: convoys, territories: territories}, %Seelies.LoadResourcesIntoConvoy{convoy_id: convoy_id, resources: resources}) do
+    cond do
+      convoys[convoy_id] == nil ->
+        {:error, :convoy_not_found}
+
+      Seelies.ResourcesQuantity.has_enough?(territories[convoys[convoy_id].territory_id].resources, resources) ->
+        {:error, :not_enough_resources}
+
+      true ->
+        %Seelies.ResourcesLoadedIntoConvoy{game_id: game_id, convoy_id: convoy_id, resources: resources}
+    end
+  end
+end
+
+
+defmodule Seelies.ResourcesUnloadedFromConvoy do
+  @derive Jason.Encoder
+  defstruct [:game_id, :convoy_id, :resources]
+
+  def apply(game = %Seelies.Game{game_id: game_id, convoys: convoys, territories: territories}, %Seelies.ResourcesUnloadedFromConvoy{game_id: game_id, convoy_id: convoy_id, resources: unloaded_resources}) do
+    %{game |
+      convoys: update_in(convoys, [convoy_id, :resources], fn (carried_resources) -> Seelies.ResourcesQuantity.substract(carried_resources, unloaded_resources) end),
+      territories: update_in(territories, [convoys[convoy_id].territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, unloaded_resources) end)}
+  end
+end
+
+
+defmodule Seelies.UnloadResourcesFromConvoy do
+  defstruct [:game_id, :resources, :convoy_id]
+
+  def execute(%Seelies.Game{game_id: game_id, convoys: convoys}, %Seelies.UnloadResourcesFromConvoy{convoy_id: convoy_id, resources: unloaded_resources}) do
+    cond do
+      convoys[convoy_id] == nil ->
+        {:error, :convoy_not_found}
+
+      Seelies.ResourcesQuantity.has_enough?(convoys[convoy_id].resources, unloaded_resources) ->
+        {:error, :not_enough_resources}
+
+      true ->
+        %Seelies.ResourcesUnloadedFromConvoy{game_id: game_id, convoy_id: convoy_id, resources: unloaded_resources}
+    end
   end
 end

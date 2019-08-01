@@ -117,4 +117,59 @@ defmodule ConvoysTest do
 
     :ok = Seelies.Router.dispatch(%Seelies.UnitStartsExploitingDeposit{game_id: "42", unit_id: "u1", deposit_id: "d1", time: 60 })
   end
+
+
+  test "Nonexistent convoy can't be loaded with resources" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    {:error, :convoy_not_found} = Seelies.Router.dispatch(%Seelies.LoadResourcesIntoConvoy{game_id: "42", convoy_id: "c1000", resources: %{silver: 500, gold: 100}})
+  end
+
+
+  test "Convoy can't be loaded if resources are missing" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
+    {:error, :not_enough_resources} = Seelies.Router.dispatch(%Seelies.LoadResourcesIntoConvoy{game_id: "42", convoy_id: "c1", resources: %{silver: 500, gold: 100}})
+  end
+
+
+  test "Loaded resources are moved from the territory to the convoy" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.AddResources{game_id: "42", territory_id: "t1", quantity: %{silver: 1000, gold: 1000}})
+    :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
+    :ok = Seelies.Router.dispatch(%Seelies.LoadResourcesIntoConvoy{game_id: "42", convoy_id: "c1", resources: %{silver: 500, gold: 100}})
+
+    game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, "42")
+    assert Seelies.ResourcesQuantity.territory(game, "t1").silver == 500
+    assert Seelies.ResourcesQuantity.territory(game, "t1").gold == 900
+    assert Seelies.ResourcesQuantity.convoy(game, "c1").silver == 500
+    assert Seelies.ResourcesQuantity.convoy(game, "c1").gold == 100
+  end
+
+
+  test "Nonexistent convoy can't be unloaded" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    {:error, :convoy_not_found} = Seelies.Router.dispatch(%Seelies.UnloadResourcesFromConvoy{game_id: "42", convoy_id: "c1000", resources: %{silver: 500, gold: 100}})
+  end
+
+
+  test "Only loaded resources can be unloaded from the convoy" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
+    {:error, :not_enough_resources} = Seelies.Router.dispatch(%Seelies.UnloadResourcesFromConvoy{game_id: "42", convoy_id: "c1", resources: %{silver: 500, gold: 100}})
+  end
+
+
+  test "Unloaded resources are moved from the convoy to the territory" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.AddResources{game_id: "42", territory_id: "t1", quantity: %{silver: 1000, gold: 1000}})
+    :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
+    :ok = Seelies.Router.dispatch(%Seelies.LoadResourcesIntoConvoy{game_id: "42", convoy_id: "c1", resources: %{silver: 500, gold: 500}})
+    :ok = Seelies.Router.dispatch(%Seelies.UnloadResourcesFromConvoy{game_id: "42", convoy_id: "c1", resources: %{gold: 250}})
+
+    game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, "42")
+    assert Seelies.ResourcesQuantity.territory(game, "t1").silver == 500
+    assert Seelies.ResourcesQuantity.territory(game, "t1").gold == 750
+    assert Seelies.ResourcesQuantity.convoy(game, "c1").silver == 500
+    assert Seelies.ResourcesQuantity.convoy(game, "c1").gold == 250
+  end
 end
