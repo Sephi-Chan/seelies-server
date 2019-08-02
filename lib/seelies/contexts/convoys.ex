@@ -3,7 +3,7 @@ defmodule Seelies.ConvoyReadied do
   defstruct [:game_id, :convoy_id, :territory_id]
 
   def apply(game = %Seelies.Game{convoys: convoys}, %Seelies.ConvoyReadied{convoy_id: convoy_id, territory_id: territory_id}) do
-    convoy = %{territory_id: territory_id, unit_ids: [], resources: Seelies.ResourcesQuantity.null}
+    convoy = %{territory_id: territory_id, unit_ids: [], resources: Seelies.ResourcesQuantity.null, destination_territory_id: nil}
     %{game | convoys: Map.put(convoys, convoy_id, convoy)}
   end
 end
@@ -152,6 +152,48 @@ defmodule Seelies.UnloadResourcesFromConvoy do
 
       true ->
         %Seelies.ResourcesUnloadedFromConvoy{game_id: game_id, convoy_id: convoy_id, resources: unloaded_resources}
+    end
+  end
+end
+
+
+
+defmodule Seelies.ConvoyStarted do
+  @derive Jason.Encoder
+  defstruct [:game_id, :convoy_id, :destination_territory_id, :duration]
+
+  def apply(game = %Seelies.Game{convoys: convoys}, %Seelies.ConvoyStarted{convoy_id: convoy_id, destination_territory_id: destination_territory_id}) do
+    %{game | convoys: put_in(convoys, [convoy_id, :destination_territory_id], destination_territory_id)}
+  end
+end
+
+
+defmodule Seelies.ConvoyStarts do
+  defstruct [:game_id, :convoy_id, :destination_territory_id]
+
+  def execute(game = %Seelies.Game{game_id: game_id, territories: territories, convoys: convoys, board: board}, %Seelies.ConvoyStarts{convoy_id: convoy_id, destination_territory_id: destination_territory_id}) do
+    cond do
+      convoys[convoy_id] == nil ->
+        {:error, :convoy_not_found}
+
+      convoys[convoy_id].unit_ids == [] ->
+        {:error, :no_unit}
+
+      territories[destination_territory_id] == nil ->
+        {:error, :territory_not_found}
+
+      convoys[convoy_id].destination_territory_id != nil ->
+        {:error, :already_started}
+
+      not Seelies.Board.has_route_between?(board, convoys[convoy_id].territory_id, destination_territory_id) ->
+        {:error, :territory_too_far}
+
+      true ->
+        {_slowest_unit_id, slowest_unit_speed} = Seelies.Unit.slowest(game, convoys[convoy_id].unit_ids) # 7 metres per hour (beetle)
+        distance = Seelies.Board.distance_between_territories(board, convoys[convoy_id].territory_id, destination_territory_id) # 10 metres
+        duration = Float.round(distance * 3600 / slowest_unit_speed)
+
+        %Seelies.ConvoyStarted{game_id: game_id, convoy_id: convoy_id, destination_territory_id: destination_territory_id, duration: duration}
     end
   end
 end

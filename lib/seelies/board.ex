@@ -53,4 +53,14 @@ defmodule Seelies.Board do
       Map.has_key?(board.areas[area_id].deposits, deposit_id)
     end)
   end
+
+
+  def has_route_between?(board, territory_id, other_territory_id) do
+    !!get_in(board, [:routes, territory_id, other_territory_id])
+  end
+
+
+  def distance_between_territories(board, territory_id, other_territory_id) do
+    get_in(board, [:routes, territory_id, other_territory_id])
+  end
 end

@@ -94,7 +94,7 @@ defmodule ConvoysTest do
   end
 
 
-  test "Unit can only leave the convoy its in" do
+  test "Unit can only leave the convoy if it belongs to it" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
     :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
     :ok = Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: "42", unit_id: "u1", territory_id: "t1", species: :ant})
@@ -171,5 +171,55 @@ defmodule ConvoysTest do
     assert Seelies.ResourcesQuantity.territory(game, "t1").gold == 750
     assert Seelies.ResourcesQuantity.convoy(game, "c1").silver == 500
     assert Seelies.ResourcesQuantity.convoy(game, "c1").gold == 250
+  end
+
+
+  test "Nonexistent convoy can't start" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    {:error, :convoy_not_found} = Seelies.Router.dispatch(%Seelies.ConvoyStarts{game_id: "42", convoy_id: "c1000", destination_territory_id: "t2"})
+  end
+
+
+  test "Convoy need at least one unit to start" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
+    {:error, :no_unit} = Seelies.Router.dispatch(%Seelies.ConvoyStarts{game_id: "42", convoy_id: "c1", destination_territory_id: "t2"})
+  end
+
+
+  test "Convoy can't go to nonexistent territory" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: "42", unit_id: "u1", territory_id: "t1", species: :ant})
+    :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
+    :ok = Seelies.Router.dispatch(%Seelies.UnitJoinsConvoy{game_id: "42", convoy_id: "c1", unit_id: "u1"})
+    {:error, :territory_not_found} = Seelies.Router.dispatch(%Seelies.ConvoyStarts{game_id: "42", convoy_id: "c1", destination_territory_id: "t1000"})
+  end
+
+
+  test "Convoy can only start to neighbour territories" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: "42", unit_id: "u1", territory_id: "t1", species: :ant})
+    :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
+    :ok = Seelies.Router.dispatch(%Seelies.UnitJoinsConvoy{game_id: "42", convoy_id: "c1", unit_id: "u1"})
+    {:error, :territory_too_far} = Seelies.Router.dispatch(%Seelies.ConvoyStarts{game_id: "42", convoy_id: "c1", destination_territory_id: "t4"})
+  end
+
+
+  test "Convoy starts at the speed of its slowest unit and can't be started anymore" do
+    :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
+    :ok = Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: "42", unit_id: "u1", territory_id: "t1", species: :ant})
+    :ok = Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: "42", unit_id: "u2", territory_id: "t1", species: :beetle})
+    :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
+    :ok = Seelies.Router.dispatch(%Seelies.UnitJoinsConvoy{game_id: "42", convoy_id: "c1", unit_id: "u1"})
+    :ok = Seelies.Router.dispatch(%Seelies.UnitJoinsConvoy{game_id: "42", convoy_id: "c1", unit_id: "u2"})
+    :ok = Seelies.Router.dispatch(%Seelies.ConvoyStarts{game_id: "42", convoy_id: "c1", destination_territory_id: "t2"})
+
+    assert_receive_event(Seelies.ConvoyStarted, fn (event) ->
+      assert event.game_id == "42"
+      assert event.convoy_id == "c1"
+      assert event.duration == 4629 # duration = 9 metres * 3600 seconds / 7 metres per hour
+    end)
+
+    {:error, :already_started} = Seelies.Router.dispatch(%Seelies.ConvoyStarts{game_id: "42", convoy_id: "c1", destination_territory_id: "t2"})
   end
 end
