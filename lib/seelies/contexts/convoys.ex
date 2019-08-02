@@ -117,7 +117,7 @@ defmodule Seelies.LoadResourcesIntoConvoy do
       convoys[convoy_id] == nil ->
         {:error, :convoy_not_found}
 
-      Seelies.ResourcesQuantity.has_enough?(territories[convoys[convoy_id].territory_id].resources, resources) ->
+      not Seelies.ResourcesQuantity.has_enough?(territories[convoys[convoy_id].territory_id].resources, resources) ->
         {:error, :not_enough_resources}
 
       true ->
@@ -147,7 +147,7 @@ defmodule Seelies.UnloadResourcesFromConvoy do
       convoys[convoy_id] == nil ->
         {:error, :convoy_not_found}
 
-      Seelies.ResourcesQuantity.has_enough?(convoys[convoy_id].resources, unloaded_resources) ->
+      not Seelies.ResourcesQuantity.has_enough?(convoys[convoy_id].resources, unloaded_resources) ->
         {:error, :not_enough_resources}
 
       true ->

@@ -19,8 +19,8 @@ defmodule Seelies.ResourcesQuantity do
 
 
   def has_enough?(available_quantity, needed_quantity) do
-    Enum.all?(needed_quantity, fn ({resource_type, quantity}) ->
-      available_quantity[resource_type] <= quantity
+    not Enum.any?(needed_quantity, fn ({resource_type, needed_amount}) ->
+      available_quantity[resource_type] < needed_amount
     end)
   end
 

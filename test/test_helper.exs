@@ -12,3 +12,5 @@ defmodule InMemoryEventStoreCase do
     end)
   end
 end
+
+Code.load_file("test/seelies_test.exs")
