@@ -54,7 +54,7 @@ defmodule Seelies.UnitJoinsConvoy do
         {:error, :already_joined}
 
       exploitations[unit_id] != nil ->
-        {:error, :unavailable_unit}
+        {:error, :busy_exploiting}
 
       convoys[convoy_id].territory_id != units[unit_id].territory_id ->
         {:error, :convoy_too_far}

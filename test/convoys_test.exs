@@ -54,12 +54,12 @@ defmodule ConvoysTest do
   end
 
 
-  test "Unit can't exploit resources while in a convoy" do
+  test "Unit can't join convoy while exploiting" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: SeeliesTest.board()})
     :ok = Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: "42", unit_id: "u1", territory_id: "t1", species: :ant})
     :ok = Seelies.Router.dispatch(%Seelies.PrepareConvoy{game_id: "42", convoy_id: "c1", territory_id: "t1"})
     :ok = Seelies.Router.dispatch(%Seelies.UnitStartsExploitingDeposit{game_id: "42", unit_id: "u1", deposit_id: "d1", time: 60 })
-    {:error, :unavailable_unit} = Seelies.Router.dispatch(%Seelies.UnitJoinsConvoy{game_id: "42", convoy_id: "c1", unit_id: "u1"})
+    {:error, :busy_exploiting} = Seelies.Router.dispatch(%Seelies.UnitJoinsConvoy{game_id: "42", convoy_id: "c1", unit_id: "u1"})
   end
 
 
@@ -83,7 +83,7 @@ defmodule ConvoysTest do
       assert event.unit_id == "u1"
     end)
 
-    {:error, :unavailable_unit} = Seelies.Router.dispatch(%Seelies.UnitStartsExploitingDeposit{game_id: "42", unit_id: "u1", deposit_id: "d1", time: 60 })
+    {:error, :busy_convoying} = Seelies.Router.dispatch(%Seelies.UnitStartsExploitingDeposit{game_id: "42", unit_id: "u1", deposit_id: "d1", time: 60 })
   end
 
 
