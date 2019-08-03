@@ -226,3 +226,37 @@ defmodule Seelies.ConvoyReachesDestination do
     %Seelies.ConvoyReachedDestination{game_id: game_id, convoy_id: convoy_id}
   end
 end
+
+
+
+defmodule Seelies.ConvoyDisbanded do
+  @derive Jason.Encoder
+  defstruct [:game_id, :convoy_id]
+
+  def apply(game = %Seelies.Game{convoys: convoys, territories: territories}, %Seelies.ConvoyDisbanded{convoy_id: convoy_id}) do
+    %{game |
+      units: Enum.reduce(convoys[convoy_id].unit_ids, game.units, fn (unit_id, units) ->
+        put_in(units, [unit_id, :convoy_id], nil)
+      end),
+      territories: update_in(territories, [convoys[convoy_id].territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, convoys[convoy_id].resources) end),
+      convoys: Map.delete(convoys, convoy_id)}
+  end
+end
+
+
+defmodule Seelies.DisbandConvoy do
+  defstruct [:game_id, :convoy_id]
+
+  def execute(%Seelies.Game{game_id: game_id, convoys: convoys}, %Seelies.DisbandConvoy{convoy_id: convoy_id}) do
+    cond do
+      convoys[convoy_id] == nil ->
+        {:error, :convoy_not_found}
+
+      convoys[convoy_id].destination_territory_id != nil ->
+        {:error, :already_started}
+
+      true ->
+        %Seelies.ConvoyDisbanded{game_id: game_id, convoy_id: convoy_id}
+    end
+  end
+end

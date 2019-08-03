@@ -15,6 +15,7 @@ defmodule Seelies.Game do
   def execute(game, command = %Seelies.UnloadResourcesFromConvoy{}) do Seelies.UnloadResourcesFromConvoy.execute(game, command) end
   def execute(game, command = %Seelies.ConvoyStarts{}) do Seelies.ConvoyStarts.execute(game, command) end
   def execute(game, command = %Seelies.ConvoyReachesDestination{}) do Seelies.ConvoyReachesDestination.execute(game, command) end
+  def execute(game, command = %Seelies.DisbandConvoy{}) do Seelies.DisbandConvoy.execute(game, command) end
 
 
   def apply(game, event = %Seelies.GameStarted{}) do Seelies.GameStarted.apply(game, event) end
@@ -30,6 +31,7 @@ defmodule Seelies.Game do
   def apply(game, event = %Seelies.ResourcesUnloadedFromConvoy{}) do Seelies.ResourcesUnloadedFromConvoy.apply(game, event) end
   def apply(game, event = %Seelies.ConvoyStarted{}) do Seelies.ConvoyStarted.apply(game, event) end
   def apply(game, event = %Seelies.ConvoyReachedDestination{}) do Seelies.ConvoyReachedDestination.apply(game, event) end
+  def apply(game, event = %Seelies.ConvoyDisbanded{}) do Seelies.ConvoyDisbanded.apply(game, event) end
 
 
   def resources(game, territory_id) do
