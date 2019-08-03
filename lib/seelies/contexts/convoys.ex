@@ -12,8 +12,11 @@ end
 defmodule Seelies.PrepareConvoy do
   defstruct [:game_id, :convoy_id, :territory_id]
 
-  def execute(%Seelies.Game{game_id: game_id, board: board}, %Seelies.PrepareConvoy{convoy_id: convoy_id, territory_id: territory_id}) do
+  def execute(%Seelies.Game{game_id: game_id, board: board, convoys: convoys}, %Seelies.PrepareConvoy{convoy_id: convoy_id, territory_id: territory_id}) do
     cond do
+      convoys[convoy_id] != nil ->
+        {:error, :convoy_already_exists}
+
       not Seelies.Board.has_territory?(board, territory_id) ->
         {:error, :territory_not_found}
 
@@ -157,7 +160,6 @@ defmodule Seelies.UnloadResourcesFromConvoy do
 end
 
 
-
 defmodule Seelies.ConvoyStarted do
   @derive Jason.Encoder
   defstruct [:game_id, :convoy_id, :destination_territory_id, :duration]
@@ -195,5 +197,32 @@ defmodule Seelies.ConvoyStarts do
 
         %Seelies.ConvoyStarted{game_id: game_id, convoy_id: convoy_id, destination_territory_id: destination_territory_id, duration: duration}
     end
+  end
+end
+
+
+defmodule Seelies.ConvoyReachedDestination do
+  @derive Jason.Encoder
+  defstruct [:game_id, :convoy_id]
+
+  def apply(game = %Seelies.Game{convoys: convoys, territories: territories}, %Seelies.ConvoyReachedDestination{convoy_id: convoy_id}) do
+    territory_id = convoys[convoy_id].destination_territory_id
+    %{game |
+      units: Enum.reduce(convoys[convoy_id].unit_ids, game.units, fn (unit_id, units) ->
+        units
+          |> put_in([unit_id, :convoy_id], nil)
+          |> put_in([unit_id, :territory_id], territory_id)
+      end),
+      territories: update_in(territories, [territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, convoys[convoy_id].resources) end),
+      convoys: Map.delete(convoys, convoy_id)}
+  end
+end
+
+
+defmodule Seelies.ConvoyReachesDestination do
+  defstruct [:game_id, :convoy_id]
+
+  def execute(%Seelies.Game{game_id: game_id}, %Seelies.ConvoyReachesDestination{convoy_id: convoy_id}) do
+    %Seelies.ConvoyReachedDestination{game_id: game_id, convoy_id: convoy_id}
   end
 end
