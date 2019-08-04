@@ -1,5 +1,5 @@
 defmodule ResourcesQuantityTest do
-  use InMemoryEventStoreCase
+  use Seelies.Test.DataCase
 
 
   test "Resources quantities can be added" do

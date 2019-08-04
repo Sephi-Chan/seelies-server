@@ -1,11 +1,11 @@
 defmodule Seelies.Application do
-  @moduledoc false
-
   use Application
 
   def start(_type, _args) do
     children = [
-      {Seelies.Repo, []}
+      {Seelies.Repo, []},
+      {Seelies.ExploitationTicksHandler, []},
+      # {Seelies.EventStore, []}
     ]
 
     opts = [strategy: :one_for_one, name: Seelies.Supervisor]
