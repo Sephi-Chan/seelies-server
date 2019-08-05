@@ -3,6 +3,7 @@ defmodule Seelies.Game do
 
 
   def execute(game, command = %Seelies.StartGame{}) do Seelies.StartGame.execute(game, command) end
+  def execute(game, command = %Seelies.StopGame{}) do Seelies.StopGame.execute(game, command) end
   def execute(game, command = %Seelies.DeployStartingUnit{}) do Seelies.DeployStartingUnit.execute(game, command) end
   def execute(game, command = %Seelies.UnitStartsExploitingDeposit{}) do Seelies.UnitStartsExploitingDeposit.execute(game, command) end
   def execute(game, command = %Seelies.UnitStopsExploitingDeposit{}) do Seelies.UnitStopsExploitingDeposit.execute(game, command) end
@@ -19,6 +20,7 @@ defmodule Seelies.Game do
 
 
   def apply(game, event = %Seelies.GameStarted{}) do Seelies.GameStarted.apply(game, event) end
+  def apply(game, event = %Seelies.GameStopped{}) do Seelies.GameStopped.apply(game, event) end
   def apply(game, event = %Seelies.StartingUnitDeployed{}) do Seelies.StartingUnitDeployed.apply(game, event) end
   def apply(game, event = %Seelies.UnitStartedExploitingDeposit{}) do Seelies.UnitStartedExploitingDeposit.apply(game, event) end
   def apply(game, event = %Seelies.UnitStoppedExploitingDeposit{}) do Seelies.UnitStoppedExploitingDeposit.apply(game, event) end
@@ -37,4 +39,12 @@ defmodule Seelies.Game do
   def resources(game, territory_id) do
     game.territories[territory_id].resources
   end
+end
+
+
+defmodule Seelies.GameLifespan do
+  def after_event(%Seelies.GameStopped{}), do: :stop
+  def after_event(_event), do: :infinity
+  def after_command(_command), do: :infinity
+  def after_error(_error), do: :stop
 end

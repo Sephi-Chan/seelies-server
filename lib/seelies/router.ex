@@ -1,4 +1,5 @@
 require Seelies.Game
+require Seelies.GameLifespan
 
 defmodule Seelies.Router do
   use Commanded.Commands.Router
@@ -6,6 +7,7 @@ defmodule Seelies.Router do
   dispatch(
     [
       Seelies.StartGame,
+      Seelies.StopGame,
       Seelies.AddResources,
       Seelies.DeployStartingUnit,
       Seelies.UnitStartsExploitingDeposit,
@@ -21,6 +23,7 @@ defmodule Seelies.Router do
       Seelies.DisbandConvoy
     ],
     to: Seelies.Game,
-    identity: :game_id
+    identity: :game_id,
+    lifespan: Seelies.GameLifespan
   )
 end
