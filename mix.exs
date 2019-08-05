@@ -28,7 +28,7 @@ defmodule Seelies.MixProject do
       {:mix_test_watch, "~> 0.8", only: [:test, :dev], runtime: false},
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
-      # {:commanded_scheduler, "~> 0.2"},
+      {:commanded_scheduler, "~> 0.2"},
       {:eventstore, "~> 0.17"},
       {:commanded_eventstore_adapter, "~> 0.6"}
     ]

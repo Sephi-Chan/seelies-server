@@ -17,6 +17,7 @@ defmodule Seelies.Test.DataCase do
     on_exit(fn ->
       :ok = Application.stop(:seelies)
       :ok = Application.stop(:commanded)
+      :ok = Application.stop(:commanded_scheduler)
       :ok = Application.stop(:eventstore)
 
       Seelies.Test.Storage.reset!()
