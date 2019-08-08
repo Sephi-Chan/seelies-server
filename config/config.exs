@@ -6,4 +6,7 @@ config :seelies,
 config :commanded_scheduler,
   router: Seelies.Router
 
+config :eventstore, EventStore.Storage,
+  serializer: Seelies.JsonSerializer
+
 import_config "#{Mix.env()}.exs"
