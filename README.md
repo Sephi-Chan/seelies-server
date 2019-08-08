@@ -65,7 +65,7 @@ board = (
     |> Seelies.Board.add_route("t4", "t5", 1)
 )
 
-Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: board})
+Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: board, teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
 Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: "42", unit_id: "u1", territory_id: "t1", species: :ant})
 
 game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, "42")

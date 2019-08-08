@@ -4,7 +4,7 @@ config :commanded,
   event_store_adapter: Commanded.EventStore.Adapters.EventStore
 
 config :eventstore, EventStore.Storage,
-  serializer: Commanded.Serialization.JsonSerializer,
+  serializer: Seelies.JsonSerializer,
   username: "seelies",
   password: "b?t>J0yD{8<1",
   database: "seelies_event_store_test",
@@ -28,4 +28,5 @@ config :commanded_scheduler, Commanded.Scheduler.Repo,
 
 config :logger, level: :warn
 
-config :mix_test_watch, clear: true
+config :mix_test_watch,
+  clear: true
