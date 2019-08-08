@@ -11,7 +11,7 @@ defmodule Seelies.Board do
 
 
   def add_area(board, area_id) do
-    put_in(board, [:areas, area_id], %{deposits: %{}})
+    put_in(board, [:areas, area_id], %{species: [], deposits: %{}})
   end
 
 
@@ -62,5 +62,10 @@ defmodule Seelies.Board do
 
   def distance_between_territories(board, territory_id, other_territory_id) do
     get_in(board, [:routes, territory_id, other_territory_id])
+  end
+
+
+  def add_species(board, area_id, species) do
+    put_in(board, [:areas, area_id, :species], species)
   end
 end

@@ -25,5 +25,9 @@ defmodule Seelies.Test do
       |> Board.add_route("t3", "t4", 2)
       |> Board.add_route("t3", "t5", 5)
       |> Board.add_route("t4", "t5", 1)
+      |> Board.add_species("a1", [:ant, :beetle])
+      |> Board.add_species("a2", [:ant])
+      |> Board.add_species("a3", [:beetle])
+      |> Board.add_species("a4", [:wasp])
   end
 end

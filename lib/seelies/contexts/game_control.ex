@@ -1,17 +1,21 @@
 defmodule Seelies.GameStarted do
   @derive Jason.Encoder
-  defstruct [:game_id, :board]
+  defstruct [:game_id, :board, :teams]
 
 
-  def apply(_state, %Seelies.GameStarted{game_id: game_id, board: board}) do
+  def apply(_state, %Seelies.GameStarted{game_id: game_id, board: board, teams: teams}) do
+    dispatch = Seelies.Team.dispatch(Enum.map(teams, fn (team) -> team.id end), Map.keys(board.territories))
+
     %Seelies.Game{
+      teams: teams,
+      players: Seelies.Team.players_from_teams(teams),
       game_id: game_id,
       board: board,
       units: %{},
       exploitations: %{},
       convoys: %{},
       territories: Enum.reduce(board.territories, %{}, fn ({territory_id, _territory}, acc) ->
-        Map.put(acc, territory_id, %{resources: Seelies.ResourcesQuantity.null})
+        Map.put(acc, territory_id, %{team: dispatch[territory_id], resources: Seelies.ResourcesQuantity.null})
       end)
     }
   end
@@ -19,11 +23,11 @@ end
 
 
 defmodule Seelies.StartGame do
-  defstruct [:game_id, :board]
+  defstruct [:game_id, :board, :teams]
 
 
-  def execute(%Seelies.Game{game_id: nil}, %Seelies.StartGame{game_id: game_id, board: board}) do
-    %Seelies.GameStarted{game_id: game_id, board: board}
+  def execute(%Seelies.Game{game_id: nil}, %Seelies.StartGame{game_id: game_id, board: board, teams: teams}) do
+    %Seelies.GameStarted{game_id: game_id, board: board, teams: teams}
   end
 
 

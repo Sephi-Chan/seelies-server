@@ -1,8 +1,8 @@
 defmodule Seelies.Unit do
   @resources_per_minute %{
-    ant:    %{ gold: 10, silver: 10 },
-    beetle: %{ gold: 10, silver: 10 },
-    wasp:   %{ gold: 10, silver: 10 }
+    ant:    %{gold: 10, silver: 10},
+    beetle: %{gold: 10, silver: 10},
+    wasp:   %{gold: 10, silver: 10}
   }
 
   @metres_per_hour %{
@@ -31,5 +31,25 @@ defmodule Seelies.Unit do
         true -> {slowest_unit_id, slowest_unit_speed}
       end
     end)
+  end
+
+
+  def exists?(%Seelies.Game{units: units}, unit_id) do
+    units[unit_id] != nil
+  end
+
+
+  def exploiting?(%Seelies.Game{exploitations: exploitations}, unit_id) do
+    exploitations[unit_id] != nil
+  end
+
+
+  def convoying?(%Seelies.Game{units: units}, unit_id) do
+    units[unit_id].convoy_id != nil
+  end
+
+
+  def belongs_to_convoy?(%Seelies.Game{units: units}, unit_id, convoy_id) do
+    units[unit_id].convoy_id == convoy_id
   end
 end

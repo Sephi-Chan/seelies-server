@@ -1,5 +1,5 @@
 defmodule Seelies.Game do
-  defstruct [:game_id, :board, :units, :exploitations, :territories, :convoys]
+  defstruct [:game_id, :board, :units, :exploitations, :territories, :convoys, :teams, :players]
 
 
   def execute(game, command = %Seelies.StartGame{}) do Seelies.StartGame.execute(game, command) end
@@ -34,11 +34,6 @@ defmodule Seelies.Game do
   def apply(game, event = %Seelies.ConvoyStarted{}) do Seelies.ConvoyStarted.apply(game, event) end
   def apply(game, event = %Seelies.ConvoyReachedDestination{}) do Seelies.ConvoyReachedDestination.apply(game, event) end
   def apply(game, event = %Seelies.ConvoyDisbanded{}) do Seelies.ConvoyDisbanded.apply(game, event) end
-
-
-  def resources(game, territory_id) do
-    game.territories[territory_id].resources
-  end
 end
 
 
@@ -46,5 +41,5 @@ defmodule Seelies.GameLifespan do
   def after_event(%Seelies.GameStopped{}), do: :stop
   def after_event(_event), do: :infinity
   def after_command(_command), do: :infinity
-  def after_error(_error), do: :stop
+  def after_error(_error), do: :infinity
 end

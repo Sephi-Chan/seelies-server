@@ -10,15 +10,18 @@ end
 
 
 defmodule Seelies.PrepareConvoy do
-  defstruct [:game_id, :convoy_id, :territory_id]
+  defstruct [:game_id, :convoy_id, :territory_id, :player_id]
 
-  def execute(%Seelies.Game{game_id: game_id, board: board, convoys: convoys}, %Seelies.PrepareConvoy{convoy_id: convoy_id, territory_id: territory_id}) do
+  def execute(game = %Seelies.Game{game_id: game_id, board: board}, %Seelies.PrepareConvoy{convoy_id: convoy_id, territory_id: territory_id, player_id: player_id}) do
     cond do
-      convoys[convoy_id] != nil ->
+      Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_already_exists}
 
       not Seelies.Board.has_territory?(board, territory_id) ->
         {:error, :territory_not_found}
+
+      not Seelies.Player.can_manage_territory?(game, player_id, territory_id) ->
+        {:error, :unauthorized_player}
 
       true ->
         %Seelies.ConvoyReadied{game_id: game_id, convoy_id: convoy_id, territory_id: territory_id}
@@ -40,23 +43,26 @@ end
 
 
 defmodule Seelies.UnitJoinsConvoy do
-  defstruct [:game_id, :convoy_id, :unit_id]
+  defstruct [:game_id, :convoy_id, :unit_id, :player_id]
 
-  def execute(%Seelies.Game{game_id: game_id, exploitations: exploitations, convoys: convoys, units: units}, %Seelies.UnitJoinsConvoy{convoy_id: convoy_id, unit_id: unit_id}) do
+  def execute(game = %Seelies.Game{game_id: game_id}, %Seelies.UnitJoinsConvoy{convoy_id: convoy_id, unit_id: unit_id, player_id: player_id}) do
     cond do
-      convoys[convoy_id] == nil ->
+      not Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_not_found}
 
-      units[unit_id] == nil ->
+      not Seelies.Unit.exists?(game, unit_id) ->
         {:error, :unit_not_found}
 
-      units[unit_id].convoy_id == convoy_id ->
+      Seelies.Unit.belongs_to_convoy?(game, unit_id, convoy_id) ->
         {:error, :already_joined}
 
-      exploitations[unit_id] != nil ->
+      Seelies.Unit.exploiting?(game, unit_id) ->
         {:error, :busy_exploiting}
 
-      convoys[convoy_id].territory_id != units[unit_id].territory_id ->
+      not Seelies.Player.can_control_unit?(game, player_id, unit_id) ->
+        {:error, :unauthorized_player}
+
+      not Seelies.Convoy.is_near_unit?(game, convoy_id, unit_id) ->
         {:error, :convoy_too_far}
 
       true ->
@@ -79,18 +85,21 @@ end
 
 
 defmodule Seelies.UnitLeavesConvoy do
-  defstruct [:game_id, :convoy_id, :unit_id]
+  defstruct [:game_id, :convoy_id, :unit_id, :player_id]
 
-  def execute(%Seelies.Game{game_id: game_id, convoys: convoys, units: units}, %Seelies.UnitLeavesConvoy{convoy_id: convoy_id, unit_id: unit_id}) do
+  def execute(game = %Seelies.Game{game_id: game_id}, %Seelies.UnitLeavesConvoy{convoy_id: convoy_id, unit_id: unit_id, player_id: player_id}) do
     cond do
-      convoys[convoy_id] == nil ->
+      not Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_not_found}
 
-      units[unit_id] == nil ->
+      not Seelies.Unit.exists?(game, unit_id) ->
         {:error, :unit_not_found}
 
-      units[unit_id].convoy_id != convoy_id ->
+      not Seelies.Unit.belongs_to_convoy?(game, unit_id, convoy_id) ->
         {:error, :not_in_convoy}
+
+      not Seelies.Player.can_control_unit?(game, player_id, unit_id) ->
+        {:error, :unauthorized_player}
 
       true ->
         %Seelies.UnitLeftConvoy{game_id: game_id, convoy_id: convoy_id, unit_id: unit_id}
@@ -113,15 +122,18 @@ end
 
 
 defmodule Seelies.LoadResourcesIntoConvoy do
-  defstruct [:game_id, :resources, :convoy_id]
+  defstruct [:game_id, :resources, :convoy_id, :player_id]
 
-  def execute(%Seelies.Game{game_id: game_id, convoys: convoys, territories: territories}, %Seelies.LoadResourcesIntoConvoy{convoy_id: convoy_id, resources: resources}) do
+  def execute(game = %Seelies.Game{game_id: game_id, convoys: convoys, territories: territories}, %Seelies.LoadResourcesIntoConvoy{convoy_id: convoy_id, resources: resources, player_id: player_id}) do
     cond do
-      convoys[convoy_id] == nil ->
+      not Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_not_found}
 
       not Seelies.ResourcesQuantity.has_enough?(territories[convoys[convoy_id].territory_id].resources, resources) ->
         {:error, :not_enough_resources}
+
+      not Seelies.Player.can_manage_convoy?(game, player_id, convoy_id) ->
+        {:error, :unauthorized_player}
 
       true ->
         %Seelies.ResourcesLoadedIntoConvoy{game_id: game_id, convoy_id: convoy_id, resources: resources}
@@ -143,15 +155,18 @@ end
 
 
 defmodule Seelies.UnloadResourcesFromConvoy do
-  defstruct [:game_id, :resources, :convoy_id]
+  defstruct [:game_id, :resources, :convoy_id, :player_id]
 
-  def execute(%Seelies.Game{game_id: game_id, convoys: convoys}, %Seelies.UnloadResourcesFromConvoy{convoy_id: convoy_id, resources: unloaded_resources}) do
+  def execute(game = %Seelies.Game{game_id: game_id, convoys: convoys}, %Seelies.UnloadResourcesFromConvoy{convoy_id: convoy_id, resources: unloaded_resources, player_id: player_id}) do
     cond do
-      convoys[convoy_id] == nil ->
+      not Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_not_found}
 
       not Seelies.ResourcesQuantity.has_enough?(convoys[convoy_id].resources, unloaded_resources) ->
         {:error, :not_enough_resources}
+
+      not Seelies.Player.can_manage_convoy?(game, player_id, convoy_id) ->
+        {:error, :unauthorized_player}
 
       true ->
         %Seelies.ResourcesUnloadedFromConvoy{game_id: game_id, convoy_id: convoy_id, resources: unloaded_resources}
@@ -171,24 +186,27 @@ end
 
 
 defmodule Seelies.ConvoyStarts do
-  defstruct [:game_id, :convoy_id, :destination_territory_id]
+  defstruct [:game_id, :convoy_id, :destination_territory_id, :player_id]
 
-  def execute(game = %Seelies.Game{game_id: game_id, territories: territories, convoys: convoys, board: board}, %Seelies.ConvoyStarts{convoy_id: convoy_id, destination_territory_id: destination_territory_id}) do
+  def execute(game = %Seelies.Game{game_id: game_id, convoys: convoys, board: board}, %Seelies.ConvoyStarts{convoy_id: convoy_id, destination_territory_id: destination_territory_id, player_id: player_id}) do
     cond do
-      convoys[convoy_id] == nil ->
+      not Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_not_found}
 
-      convoys[convoy_id].unit_ids == [] ->
+      not Seelies.Convoy.has_unit?(game, convoy_id) ->
         {:error, :no_unit}
 
-      territories[destination_territory_id] == nil ->
+      not Seelies.Territory.exists?(game, destination_territory_id) ->
         {:error, :territory_not_found}
 
-      convoys[convoy_id].destination_territory_id != nil ->
+      Seelies.Convoy.started?(game, convoy_id) ->
         {:error, :already_started}
 
       not Seelies.Board.has_route_between?(board, convoys[convoy_id].territory_id, destination_territory_id) ->
         {:error, :territory_too_far}
+
+      not Seelies.Player.can_manage_convoy?(game, player_id, convoy_id) ->
+        {:error, :unauthorized_player}
 
       true ->
         {_slowest_unit_id, slowest_unit_speed} = Seelies.Unit.slowest(game, convoys[convoy_id].unit_ids) # 7 metres per hour (beetle)
@@ -245,15 +263,18 @@ end
 
 
 defmodule Seelies.DisbandConvoy do
-  defstruct [:game_id, :convoy_id]
+  defstruct [:game_id, :convoy_id, :player_id]
 
-  def execute(%Seelies.Game{game_id: game_id, convoys: convoys}, %Seelies.DisbandConvoy{convoy_id: convoy_id}) do
+  def execute(game = %Seelies.Game{game_id: game_id}, %Seelies.DisbandConvoy{convoy_id: convoy_id, player_id: player_id}) do
     cond do
-      convoys[convoy_id] == nil ->
+      not Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_not_found}
 
-      convoys[convoy_id].destination_territory_id != nil ->
+      Seelies.Convoy.started?(game, convoy_id) ->
         {:error, :already_started}
+
+      not Seelies.Player.can_manage_convoy?(game, player_id, convoy_id) ->
+        {:error, :unauthorized_player}
 
       true ->
         %Seelies.ConvoyDisbanded{game_id: game_id, convoy_id: convoy_id}
