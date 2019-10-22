@@ -15,7 +15,11 @@ defmodule Seelies.GameStarted do
       exploitations: %{},
       convoys: %{},
       territories: Enum.reduce(board.territories, %{}, fn ({territory_id, _territory}, acc) ->
-        Map.put(acc, territory_id, %{team: dispatch[territory_id], resources: Seelies.ResourcesQuantity.null})
+        Map.put(acc, territory_id, %{
+          team: dispatch[territory_id],
+          resources: Seelies.ResourcesQuantity.null,
+          baits: %{}
+        })
       end)
     }
   end

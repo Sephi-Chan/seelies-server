@@ -68,4 +68,14 @@ defmodule Seelies.Board do
   def add_species(board, area_id, species) do
     put_in(board, [:areas, area_id, :species], species)
   end
+
+
+  def has_area_near_territory?(board, area_id, territory_id) do
+    Enum.member?(board.territories[territory_id].area_ids, area_id)
+  end
+
+
+  def area_has_species?(board, area_id, species) do
+    Enum.member?(board.areas[area_id].species, species)
+  end
 end

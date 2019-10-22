@@ -20,7 +20,9 @@ defmodule Seelies.Router do
       Seelies.UnloadResourcesFromConvoy,
       Seelies.ConvoyStarts,
       Seelies.ConvoyReachesDestination,
-      Seelies.DisbandConvoy
+      Seelies.DisbandConvoy,
+      Seelies.DeployBait,
+      Seelies.RemoveBait,
     ],
     to: Seelies.Game,
     identity: :game_id,
