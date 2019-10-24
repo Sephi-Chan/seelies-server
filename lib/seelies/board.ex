@@ -70,12 +70,19 @@ defmodule Seelies.Board do
   end
 
 
-  def has_area_near_territory?(board, area_id, territory_id) do
+  def is_area_around_territory?(board, area_id, territory_id) do
     Enum.member?(board.territories[territory_id].area_ids, area_id)
   end
 
 
   def area_has_species?(board, area_id, species) do
     Enum.member?(board.areas[area_id].species, species)
+  end
+
+
+  def territories_around_area(board, area_id) do
+    Enum.reduce(board.territories, [], fn ({territory_id, territory}, territory_ids) ->
+      if Enum.member?(territory.area_ids, area_id) do [territory_id|territory_ids] else territory_ids end
+    end)
   end
 end

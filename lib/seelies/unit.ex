@@ -12,6 +12,25 @@ defmodule Seelies.Unit do
   }
 
 
+  @training_durations %{ # In seconds.
+    ant: 3 * 60,
+    beetle: 10 * 60,
+    wasp: 10 * 60
+  }
+
+
+  @resources_preferences_coefficients %{ # Coefficients used in the weighting. Default is 1.
+    ant: %{gold: 1, silver: 1, bronze: 1},
+    beetle: %{gold: 1, silver: 1, bronze: 1},
+    wasp: %{gold: 1, silver: 1, bronze: 1}
+  }
+
+
+  def uuid() do
+    "unit-" <> Ecto.UUID.generate()
+  end
+
+
   def resources_per_second(species, resource_type) do
     @resources_per_minute[species][resource_type]/60
   end
@@ -19,6 +38,16 @@ defmodule Seelies.Unit do
 
   def metres_per_hour(species) do
     @metres_per_hour[species]
+  end
+
+
+  def training_durations(species) do
+    @training_durations[species]
+  end
+
+
+  def resources_preferences_coefficients(species) do
+    @resources_preferences_coefficients[species]
   end
 
 

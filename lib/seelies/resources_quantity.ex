@@ -37,4 +37,12 @@ defmodule Seelies.ResourcesQuantity do
       Map.update!(remaining_quantity, resource_type, fn (initial_count) -> initial_count - count end)
     end)
   end
+
+
+  def weight(base_quantity, coefficients) do
+    Enum.reduce(base_quantity, base_quantity, fn ({resource_type, _count}, weighted_quantity) ->
+      coefficient = Map.get(coefficients, resource_type, 1)
+      Map.update!(weighted_quantity, resource_type, fn (count) -> count * coefficient end)
+    end)
+  end
 end

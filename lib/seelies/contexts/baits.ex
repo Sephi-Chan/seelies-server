@@ -29,7 +29,7 @@ defmodule Seelies.DeployBait do
       not Seelies.Player.can_manage_territory?(game, player_id, territory_id) ->
         {:error, :unauthorized_player}
 
-      not Seelies.Board.has_area_near_territory?(board, area_id, territory_id) ->
+      not Seelies.Board.is_area_around_territory?(board, area_id, territory_id) ->
         {:error, :invalid_location}
 
       not Seelies.Board.area_has_species?(board, area_id, species) ->

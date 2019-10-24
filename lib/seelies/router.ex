@@ -23,6 +23,8 @@ defmodule Seelies.Router do
       Seelies.DisbandConvoy,
       Seelies.DeployBait,
       Seelies.RemoveBait,
+      Seelies.StartUnitTraining,
+      Seelies.SpawnUnit
     ],
     to: Seelies.Game,
     identity: :game_id,
