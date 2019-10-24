@@ -3,58 +3,62 @@ defmodule BaitsTests do
   import Commanded.Assertions.EventAssertions
 
 
-  test "Bait can't be set on enemy territory" do
+  test "Bait can't be planned on enemy territory" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: Seelies.Test.board(), teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-    {:error, :unauthorized_player} = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t5", player_id: "p1", species: :ant, resources: %{gold: 10}})
+    {:error, :unauthorized_player} = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t5", player_id: "p1", species: :ant, resources: %{gold: 10}, time: 10, recurrence: -1})
   end
 
 
-  test "Territory must exist to set a bait" do
+  test "Territory must exist to plan a bait" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: Seelies.Test.board(), teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-    {:error, :territory_not_found} = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1000", player_id: "p1", species: :ant, resources: %{gold: 10}})
+    {:error, :territory_not_found} = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t1000", player_id: "p1", species: :ant, resources: %{gold: 10}, time: 10, recurrence: -1})
   end
 
 
-  test "Bait can only be set for an existing border area/territory" do
+  test "Bait can only be planned for an existing border area/territory" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: Seelies.Test.board(), teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-    {:error, :invalid_location} = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a3", player_id: "p1", species: :wasp, resources: %{gold: 10}})
+    {:error, :invalid_location} = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t1", area_id: "a3", player_id: "p1", species: :wasp, resources: %{gold: 10}, time: 10, recurrence: -1})
   end
 
 
-  test "Bait can't be set for a species that is not spawning on the territory" do
+  test "Bait can't be planned for a species that is not spawning on the territory" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: Seelies.Test.board(), teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-    {:error, :unavailable_species} = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :wasp, resources: %{gold: 10}})
+    {:error, :unavailable_species} = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :wasp, resources: %{gold: 10}, time: 10, recurrence: -1})
   end
 
 
-  test "The territory must have enough resources to set the bait" do
+  test "The territory doesn't need to have resources to plan the bait" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: Seelies.Test.board(), teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-    {:error, :not_enough_resources} = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}})
+    :ok = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}, time: 10, recurrence: -1})
   end
 
 
-  test "The bait is set" do
+  test "The bait is set with an infinite recurrency by default" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: Seelies.Test.board(), teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-    :ok = Seelies.Router.dispatch(%Seelies.AddResources{game_id: "42", territory_id: "t1", quantity: %{gold: 1000}})
-    :ok = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}})
+    :ok = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}, time: 10, recurrence: -1})
 
-    assert_receive_event(Seelies.BaitDeployed, fn (event) ->
+    assert_receive_event(Seelies.BaitPlanned, fn (event) ->
       assert event.game_id == "42"
       assert event.territory_id == "t1"
       assert event.area_id == "a1"
       assert event.resources == %{gold: 100}
       assert event.species == :ant
+      assert event.recurrence == 0
+      assert event.time == 10
     end)
 
-    {:error, :not_enough_resources} = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :beetle, resources: %{gold: 1000}})
+    game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, "42")
+    assert Seelies.Bait.exists?(game, "t1", "a1", :ant)
   end
 
 
-  test "The bait can't be set twice" do
+  test "The bait is replaced by a new one" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: Seelies.Test.board(), teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-    :ok = Seelies.Router.dispatch(%Seelies.AddResources{game_id: "42", territory_id: "t1", quantity: %{gold: 1000, silver: 400}})
-    :ok = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}})
-    {:error, :bait_already_set} = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}})
+    :ok = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}, time: 10, recurrence: -1})
+    :ok = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 1000}, time: 10, recurrence: -1})
+
+    game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, "42")
+    assert Seelies.Bait.exists?(game, "t1", "a1", :ant)
   end
 
 
@@ -78,8 +82,7 @@ defmodule BaitsTests do
 
   test "The bait is removed" do
     :ok = Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: Seelies.Test.board(), teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-    :ok = Seelies.Router.dispatch(%Seelies.AddResources{game_id: "42", territory_id: "t1", quantity: %{gold: 1000, silver: 400}})
-    :ok = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}})
+    :ok = Seelies.Router.dispatch(%Seelies.PlanBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 100}, time: 10, recurrence: -1})
     :ok = Seelies.Router.dispatch(%Seelies.RemoveBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant})
 
     assert_receive_event(Seelies.BaitRemoved, fn (event) ->
@@ -89,6 +92,7 @@ defmodule BaitsTests do
       assert event.species == :ant
     end)
 
-    :ok = Seelies.Router.dispatch(%Seelies.DeployBait{game_id: "42", territory_id: "t1", area_id: "a1", player_id: "p1", species: :ant, resources: %{gold: 1000}})
+    game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, "42")
+    refute Seelies.Bait.exists?(game, "t1", "a1", :ant)
   end
 end

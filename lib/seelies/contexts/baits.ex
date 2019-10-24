@@ -1,27 +1,24 @@
-defmodule Seelies.BaitDeployed do
+defmodule Seelies.BaitPlanned do
   @derive Jason.Encoder
-  defstruct [:game_id, :territory_id, :area_id, :species, :resources]
+  defstruct [:game_id, :territory_id, :area_id, :species, :recurrence, :resources, :time]
 
-  def apply(game = %Seelies.Game{game_id: game_id, territories: territories}, %Seelies.BaitDeployed{game_id: game_id, territory_id: territory_id, area_id: area_id, species: species, resources: resources}) do
-    %{game |
-      territories: territories
-        |> update_in([territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.substract(stored_resources, resources) end)
-        |> put_in([territory_id, :baits, {area_id, species}], resources)}
+  def apply(game = %Seelies.Game{game_id: game_id, territories: territories}, %Seelies.BaitPlanned{game_id: game_id, territory_id: territory_id, area_id: area_id, species: species, resources: resources, recurrence: recurrence, time: time}) do
+    %{game | territories: put_in(territories, [territory_id, :baits, {area_id, species}], %{time: time, recurrence: recurrence, resources: resources})}
   end
 end
 
 
-defimpl Commanded.Serialization.JsonDecoder, for: Seelies.BaitDeployed do
-  def decode(%Seelies.BaitDeployed{species: species_as_string} = event) do
-    %Seelies.BaitDeployed{event | species: String.to_existing_atom(species_as_string)}
+defimpl Commanded.Serialization.JsonDecoder, for: Seelies.BaitPlanned do
+  def decode(%Seelies.BaitPlanned{species: species_as_string} = event) do
+    %Seelies.BaitPlanned{event | species: String.to_existing_atom(species_as_string)}
   end
 end
 
 
-defmodule Seelies.DeployBait do
-  defstruct [:game_id, :territory_id, :area_id, :resources, :player_id, :species, :resources]
+defmodule Seelies.PlanBait do
+  defstruct [:game_id, :territory_id, :area_id, :resources, :player_id, :species, :resources, :recurrence, :time]
 
-  def execute(game = %Seelies.Game{game_id: game_id, board: board}, %Seelies.DeployBait{player_id: player_id, territory_id: territory_id, area_id: area_id, species: species, resources: resources}) do
+  def execute(game = %Seelies.Game{game_id: game_id, board: board}, %Seelies.PlanBait{player_id: player_id, territory_id: territory_id, area_id: area_id, species: species, resources: resources, recurrence: recurrence, time: time}) do
     cond do
       not Seelies.Board.has_territory?(board, territory_id) ->
         {:error, :territory_not_found}
@@ -35,14 +32,8 @@ defmodule Seelies.DeployBait do
       not Seelies.Board.area_has_species?(board, area_id, species) ->
         {:error, :unavailable_species}
 
-      not Seelies.ResourcesQuantity.has_enough?(game.territories[territory_id].resources, resources) ->
-        {:error, :not_enough_resources}
-
-      Seelies.Bait.exists?(game, territory_id, area_id, species) ->
-        {:error, :bait_already_set}
-
       true ->
-        %Seelies.BaitDeployed{game_id: game_id, territory_id: territory_id, area_id: area_id, species: species, resources: resources}
+        %Seelies.BaitPlanned{game_id: game_id, territory_id: territory_id, area_id: area_id, species: species, resources: resources, recurrence: recurrence, time: time}
     end
   end
 end
@@ -53,11 +44,7 @@ defmodule Seelies.BaitRemoved do
   defstruct [:game_id, :territory_id, :area_id, :species]
 
   def apply(game = %Seelies.Game{game_id: game_id, territories: territories}, %Seelies.BaitRemoved{game_id: game_id, territory_id: territory_id, area_id: area_id, species: species}) do
-    retrieved_resources = territories[territory_id].baits[{area_id, species}]
-    %{game |
-      territories: territories
-        |> update_in([territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, retrieved_resources) end)
-        |> update_in([territory_id, :baits], fn (baits) -> Map.delete(baits, {area_id, species}) end)}
+    %{game | territories: update_in(territories, [territory_id, :baits], fn (baits) -> Map.delete(baits, {area_id, species}) end)}
   end
 end
 

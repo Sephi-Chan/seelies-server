@@ -17,7 +17,7 @@ defmodule Seelies.Game do
   def execute(game, command = %Seelies.ConvoyStarts{}) do Seelies.ConvoyStarts.execute(game, command) end
   def execute(game, command = %Seelies.ConvoyReachesDestination{}) do Seelies.ConvoyReachesDestination.execute(game, command) end
   def execute(game, command = %Seelies.DisbandConvoy{}) do Seelies.DisbandConvoy.execute(game, command) end
-  def execute(game, command = %Seelies.DeployBait{}) do Seelies.DeployBait.execute(game, command) end
+  def execute(game, command = %Seelies.PlanBait{}) do Seelies.PlanBait.execute(game, command) end
   def execute(game, command = %Seelies.RemoveBait{}) do Seelies.RemoveBait.execute(game, command) end
   def execute(game, command = %Seelies.StartUnitTraining{}) do Seelies.StartUnitTraining.execute(game, command) end
   def execute(game, command = %Seelies.SpawnUnit{}) do Seelies.SpawnUnit.execute(game, command) end
@@ -38,7 +38,7 @@ defmodule Seelies.Game do
   def apply(game, event = %Seelies.ConvoyStarted{}) do Seelies.ConvoyStarted.apply(game, event) end
   def apply(game, event = %Seelies.ConvoyReachedDestination{}) do Seelies.ConvoyReachedDestination.apply(game, event) end
   def apply(game, event = %Seelies.ConvoyDisbanded{}) do Seelies.ConvoyDisbanded.apply(game, event) end
-  def apply(game, event = %Seelies.BaitDeployed{}) do Seelies.BaitDeployed.apply(game, event) end
+  def apply(game, event = %Seelies.BaitPlanned{}) do Seelies.BaitPlanned.apply(game, event) end
   def apply(game, event = %Seelies.BaitRemoved{}) do Seelies.BaitRemoved.apply(game, event) end
   def apply(game, event = %Seelies.UnitTrainingStarted{}) do Seelies.UnitTrainingStarted.apply(game, event) end
   def apply(game, event = %Seelies.UnitSpawned{}) do Seelies.UnitSpawned.apply(game, event) end

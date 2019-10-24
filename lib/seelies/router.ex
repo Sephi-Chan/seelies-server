@@ -21,7 +21,7 @@ defmodule Seelies.Router do
       Seelies.ConvoyStarts,
       Seelies.ConvoyReachesDestination,
       Seelies.DisbandConvoy,
-      Seelies.DeployBait,
+      Seelies.PlanBait,
       Seelies.RemoveBait,
       Seelies.StartUnitTraining,
       Seelies.SpawnUnit
