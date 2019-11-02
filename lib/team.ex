@@ -1,7 +1,7 @@
 defmodule Seelies.Team do
   def territory_ids(game, team_id) do
     Enum.uniq(Enum.reduce(game.territories, [], fn ({territory_id, territory}, territory_ids) ->
-      if territory.team == team_id do
+      if territory["team"] == team_id do
         territory_ids ++ [territory_id]
       else
         territory_ids
@@ -29,8 +29,8 @@ defmodule Seelies.Team do
 
   def players_from_teams(teams) do
     Enum.reduce(teams, %{}, fn (team, players) ->
-      Enum.reduce(team.player_ids, players, fn (player_id, players) ->
-        Map.put(players, player_id, team.id)
+      Enum.reduce(team["player_ids"], players, fn (player_id, players) ->
+        Map.put(players, player_id, team["id"])
       end)
     end)
   end

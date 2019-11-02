@@ -3,7 +3,12 @@ defmodule Seelies.ConvoyReadied do
   defstruct [:game_id, :convoy_id, :territory_id]
 
   def apply(game = %Seelies.Game{convoys: convoys}, %Seelies.ConvoyReadied{convoy_id: convoy_id, territory_id: territory_id}) do
-    convoy = %{territory_id: territory_id, unit_ids: [], resources: Seelies.ResourcesQuantity.null, destination_territory_id: nil}
+    convoy = %{
+      "territory_id" => territory_id,
+      "unit_ids" => [],
+      "resources" => Seelies.ResourcesQuantity.null(),
+      "destination_territory_id" => nil
+    }
     %{game | convoys: Map.put(convoys, convoy_id, convoy)}
   end
 end
@@ -36,8 +41,8 @@ defmodule Seelies.UnitJoinedConvoy do
 
   def apply(game = %Seelies.Game{units: units, convoys: convoys}, %Seelies.UnitJoinedConvoy{unit_id: unit_id, convoy_id: convoy_id}) do
     %{game |
-      units: put_in(units, [unit_id, :convoy_id], convoy_id),
-      convoys: update_in(convoys, [convoy_id, :unit_ids], fn (unit_ids) -> [unit_id|unit_ids] end)}
+      units: put_in(units, [unit_id, "convoy_id"], convoy_id),
+      convoys: update_in(convoys, [convoy_id, "unit_ids"], fn (unit_ids) -> [unit_id|unit_ids] end)}
   end
 end
 
@@ -78,8 +83,8 @@ defmodule Seelies.UnitLeftConvoy do
 
   def apply(game = %Seelies.Game{units: units, convoys: convoys}, %Seelies.UnitLeftConvoy{unit_id: unit_id, convoy_id: convoy_id}) do
     %{game |
-      units: put_in(units, [unit_id, :convoy_id], nil),
-      convoys: update_in(convoys, [convoy_id, :unit_ids], fn (unit_ids) -> List.delete(unit_ids, unit_id) end)}
+      units: put_in(units, [unit_id, "convoy_id"], nil),
+      convoys: update_in(convoys, [convoy_id, "unit_ids"], fn (unit_ids) -> List.delete(unit_ids, unit_id) end)}
   end
 end
 
@@ -104,7 +109,6 @@ defmodule Seelies.UnitLeavesConvoy do
       true ->
         %Seelies.UnitLeftConvoy{game_id: game_id, convoy_id: convoy_id, unit_id: unit_id}
     end
-
   end
 end
 
@@ -115,8 +119,8 @@ defmodule Seelies.ResourcesLoadedIntoConvoy do
 
   def apply(game = %Seelies.Game{game_id: game_id, convoys: convoys, territories: territories}, %Seelies.ResourcesLoadedIntoConvoy{game_id: game_id, convoy_id: convoy_id, resources: resources}) do
     %{game |
-      convoys: update_in(convoys, [convoy_id, :resources], fn (carried_resources) -> Seelies.ResourcesQuantity.add(carried_resources, resources) end),
-      territories: update_in(territories, [convoys[convoy_id].territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.substract(stored_resources, resources) end)}
+      convoys: update_in(convoys, [convoy_id, "resources"], fn (carried_resources) -> Seelies.ResourcesQuantity.add(carried_resources, resources) end),
+      territories: update_in(territories, [convoys[convoy_id]["territory_id"], "resources"], fn (stored_resources) -> Seelies.ResourcesQuantity.substract(stored_resources, resources) end)}
   end
 end
 
@@ -129,7 +133,7 @@ defmodule Seelies.LoadResourcesIntoConvoy do
       not Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_not_found}
 
-      not Seelies.ResourcesQuantity.has_enough?(territories[convoys[convoy_id].territory_id].resources, resources) ->
+      not Seelies.ResourcesQuantity.has_enough?(territories[convoys[convoy_id]["territory_id"]]["resources"], resources) ->
         {:error, :not_enough_resources}
 
       not Seelies.Player.can_manage_convoy?(game, player_id, convoy_id) ->
@@ -148,8 +152,8 @@ defmodule Seelies.ResourcesUnloadedFromConvoy do
 
   def apply(game = %Seelies.Game{game_id: game_id, convoys: convoys, territories: territories}, %Seelies.ResourcesUnloadedFromConvoy{game_id: game_id, convoy_id: convoy_id, resources: unloaded_resources}) do
     %{game |
-      convoys: update_in(convoys, [convoy_id, :resources], fn (carried_resources) -> Seelies.ResourcesQuantity.substract(carried_resources, unloaded_resources) end),
-      territories: update_in(territories, [convoys[convoy_id].territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, unloaded_resources) end)}
+      convoys: update_in(convoys, [convoy_id, "resources"], fn (carried_resources) -> Seelies.ResourcesQuantity.substract(carried_resources, unloaded_resources) end),
+      territories: update_in(territories, [convoys[convoy_id]["territory_id"], "resources"], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, unloaded_resources) end)}
   end
 end
 
@@ -162,7 +166,7 @@ defmodule Seelies.UnloadResourcesFromConvoy do
       not Seelies.Convoy.exists?(game, convoy_id) ->
         {:error, :convoy_not_found}
 
-      not Seelies.ResourcesQuantity.has_enough?(convoys[convoy_id].resources, unloaded_resources) ->
+      not Seelies.ResourcesQuantity.has_enough?(convoys[convoy_id]["resources"], unloaded_resources) ->
         {:error, :not_enough_resources}
 
       not Seelies.Player.can_manage_convoy?(game, player_id, convoy_id) ->
@@ -180,7 +184,7 @@ defmodule Seelies.ConvoyStarted do
   defstruct [:game_id, :convoy_id, :destination_territory_id, :duration]
 
   def apply(game = %Seelies.Game{convoys: convoys}, %Seelies.ConvoyStarted{convoy_id: convoy_id, destination_territory_id: destination_territory_id}) do
-    %{game | convoys: put_in(convoys, [convoy_id, :destination_territory_id], destination_territory_id)}
+    %{game | convoys: put_in(convoys, [convoy_id, "destination_territory_id"], destination_territory_id)}
   end
 end
 
@@ -202,15 +206,15 @@ defmodule Seelies.ConvoyStarts do
       Seelies.Convoy.started?(game, convoy_id) ->
         {:error, :already_started}
 
-      not Seelies.Board.has_route_between?(board, convoys[convoy_id].territory_id, destination_territory_id) ->
+      not Seelies.Board.has_route_between?(board, convoys[convoy_id]["territory_id"], destination_territory_id) ->
         {:error, :territory_too_far}
 
       not Seelies.Player.can_manage_convoy?(game, player_id, convoy_id) ->
         {:error, :unauthorized_player}
 
       true ->
-        {_slowest_unit_id, slowest_unit_speed} = Seelies.Unit.slowest(game, convoys[convoy_id].unit_ids) # 7 metres per hour (beetle)
-        distance = Seelies.Board.distance_between_territories(board, convoys[convoy_id].territory_id, destination_territory_id) # 10 metres
+        {_slowest_unit_id, slowest_unit_speed} = Seelies.Unit.slowest(game, convoys[convoy_id]["unit_ids"]) # 7 metres per hour (beetle)
+        distance = Seelies.Board.distance_between_territories(board, convoys[convoy_id]["territory_id"], destination_territory_id) # 10 metres
         duration = Float.round(distance * 3600 / slowest_unit_speed)
 
         %Seelies.ConvoyStarted{game_id: game_id, convoy_id: convoy_id, destination_territory_id: destination_territory_id, duration: duration}
@@ -224,14 +228,14 @@ defmodule Seelies.ConvoyReachedDestination do
   defstruct [:game_id, :convoy_id]
 
   def apply(game = %Seelies.Game{convoys: convoys, territories: territories}, %Seelies.ConvoyReachedDestination{convoy_id: convoy_id}) do
-    territory_id = convoys[convoy_id].destination_territory_id
+    territory_id = convoys[convoy_id]["destination_territory_id"]
     %{game |
-      units: Enum.reduce(convoys[convoy_id].unit_ids, game.units, fn (unit_id, units) ->
+      units: Enum.reduce(convoys[convoy_id]["unit_ids"], game.units, fn (unit_id, units) ->
         units
-          |> put_in([unit_id, :convoy_id], nil)
-          |> put_in([unit_id, :territory_id], territory_id)
+          |> put_in([unit_id, "convoy_id"], nil)
+          |> put_in([unit_id, "territory_id"], territory_id)
       end),
-      territories: update_in(territories, [territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, convoys[convoy_id].resources) end),
+      territories: update_in(territories, [territory_id, "resources"], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, convoys[convoy_id]["resources"]) end),
       convoys: Map.delete(convoys, convoy_id)}
   end
 end
@@ -253,10 +257,10 @@ defmodule Seelies.ConvoyDisbanded do
 
   def apply(game = %Seelies.Game{convoys: convoys, territories: territories}, %Seelies.ConvoyDisbanded{convoy_id: convoy_id}) do
     %{game |
-      units: Enum.reduce(convoys[convoy_id].unit_ids, game.units, fn (unit_id, units) ->
-        put_in(units, [unit_id, :convoy_id], nil)
+      units: Enum.reduce(convoys[convoy_id]["unit_ids"], game.units, fn (unit_id, units) ->
+        put_in(units, [unit_id, "convoy_id"], nil)
       end),
-      territories: update_in(territories, [convoys[convoy_id].territory_id, :resources], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, convoys[convoy_id].resources) end),
+      territories: update_in(territories, [convoys[convoy_id]["territory_id"], "resources"], fn (stored_resources) -> Seelies.ResourcesQuantity.add(stored_resources, convoys[convoy_id]["resources"]) end),
       convoys: Map.delete(convoys, convoy_id)}
   end
 end

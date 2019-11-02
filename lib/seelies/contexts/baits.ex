@@ -3,14 +3,12 @@ defmodule Seelies.BaitPlanned do
   defstruct [:game_id, :territory_id, :area_id, :species, :recurrence, :resources, :time]
 
   def apply(game = %Seelies.Game{game_id: game_id, territories: territories}, %Seelies.BaitPlanned{game_id: game_id, territory_id: territory_id, area_id: area_id, species: species, resources: resources, recurrence: recurrence, time: time}) do
-    %{game | territories: put_in(territories, [territory_id, :baits, {area_id, species}], %{time: time, recurrence: recurrence, resources: resources})}
-  end
-end
-
-
-defimpl Commanded.Serialization.JsonDecoder, for: Seelies.BaitPlanned do
-  def decode(%Seelies.BaitPlanned{species: species_as_string} = event) do
-    %Seelies.BaitPlanned{event | species: String.to_existing_atom(species_as_string)}
+    bait = %{
+      "time" => time,
+      "recurrence" => recurrence,
+      "resources" => resources
+    }
+    %{game | territories: put_in(territories, [territory_id, "baits", {area_id, species}], bait)}
   end
 end
 
@@ -44,19 +42,9 @@ defmodule Seelies.BaitRemoved do
   defstruct [:game_id, :territory_id, :area_id, :species]
 
   def apply(game = %Seelies.Game{game_id: game_id, territories: territories}, %Seelies.BaitRemoved{game_id: game_id, territory_id: territory_id, area_id: area_id, species: species}) do
-    %{game | territories: update_in(territories, [territory_id, :baits], fn (baits) -> Map.delete(baits, {area_id, species}) end)}
+    %{game | territories: update_in(territories, [territory_id, "baits"], fn (baits) -> Map.delete(baits, {area_id, species}) end)}
   end
 end
-
-
-
-
-defimpl Commanded.Serialization.JsonDecoder, for: Seelies.BaitRemoved do
-  def decode(%Seelies.BaitRemoved{species: species_as_string} = event) do
-    %Seelies.BaitRemoved{event | species: String.to_existing_atom(species_as_string)}
-  end
-end
-
 
 
 defmodule Seelies.RemoveBait do

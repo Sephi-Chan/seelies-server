@@ -1,20 +1,19 @@
 defmodule Seelies.ResourcesQuantity do
+  @resource_types ["gold", "silver", "bronze"]
+
+
   def null do
-    %{
-      gold: 0,
-      silver: 0,
-      bronze: 0
-    }
+    Map.new(@resource_types, fn (type) -> {type, 0} end)
   end
 
 
   def territory(game, territory_id) do
-    game.territories[territory_id].resources
+    game.territories[territory_id]["resources"]
   end
 
 
   def convoy(game, convoy_id) do
-    game.convoys[convoy_id].resources
+    game.convoys[convoy_id]["resources"]
   end
 
 

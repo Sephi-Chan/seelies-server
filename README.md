@@ -25,7 +25,13 @@ $ mix test
 
 ## Running in a console
 
-Initialize the test environment once:
+Start PostgreSQL :
+
+```
+pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log  start
+```
+
+Initialize the environment once:
 
 ```
 $ mix do event_store.drop, ecto.drop, event_store.create, event_store.init, ecto.create, ecto.migrate
@@ -39,6 +45,7 @@ $ iex -S mix
 
 Seed some seed data:
 
+game_id = Ecto.UUID.generate()
 board = (
   Seelies.Board.new()
     |> Seelies.Board.add_area("a1")
@@ -65,7 +72,10 @@ board = (
     |> Seelies.Board.add_route("t4", "t5", 1)
 )
 
-Seelies.Router.dispatch(%Seelies.StartGame{game_id: "42", board: board, teams: [%{id: "red", player_ids: ["p1"]}, %{id: "blue", player_ids: ["p2"]}]})
-Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: "42", unit_id: "u1", territory_id: "t1", species: :ant})
+Seelies.Router.dispatch(%Seelies.StartGame{game_id: game_id, board: board, teams: Seelies.Test.two_teams()})
+Seelies.Router.dispatch(%Seelies.DeployStartingUnit{game_id: game_id, unit_id: "u1", territory_id: "t1", species: :ant})
 
-game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, "42")
+game = Commanded.Aggregates.Aggregate.aggregate_state(Seelies.Game, game_id)
+
+
+game_id = "4aabf6ab-456d-4be9-97a8-9f997476f676"

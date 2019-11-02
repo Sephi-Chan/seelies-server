@@ -4,9 +4,9 @@ defmodule Seelies.ResourcesAdded do
 
   def apply(game = %Seelies.Game{territories: territories}, %Seelies.ResourcesAdded{quantity: quantity, territory_id: territory_id}) do
     %{game |
-    territories: Enum.reduce(Map.keys(quantity), territories, fn (resource_type, new_territories) ->
-      update_in(new_territories, [territory_id, :resources, resource_type], fn (count) -> count + quantity[resource_type] end)
-    end)}
+      territories: Enum.reduce(Map.keys(quantity), territories, fn (resource_type, new_territories) ->
+        update_in(new_territories, [territory_id, "resources", resource_type], fn (count) -> count + quantity[resource_type] end)
+      end)}
   end
 end
 

@@ -4,7 +4,7 @@ defmodule Seelies.GameStarted do
 
 
   def apply(_state, %Seelies.GameStarted{game_id: game_id, board: board, teams: teams}) do
-    dispatch = Seelies.Team.dispatch(Enum.map(teams, fn (team) -> team.id end), Map.keys(board.territories))
+    dispatch = Seelies.Team.dispatch(Enum.map(teams, fn (team) -> team["id"] end), Map.keys(board["territories"]))
 
     %Seelies.Game{
       teams: teams,
@@ -14,11 +14,11 @@ defmodule Seelies.GameStarted do
       units: %{},
       exploitations: %{},
       convoys: %{},
-      territories: Enum.reduce(board.territories, %{}, fn ({territory_id, _territory}, acc) ->
+      territories: Enum.reduce(board["territories"], %{}, fn ({territory_id, _territory}, acc) ->
         Map.put(acc, territory_id, %{
-          team: dispatch[territory_id],
-          resources: Seelies.ResourcesQuantity.null,
-          baits: %{}
+          "team" => dispatch[territory_id],
+          "resources" => Seelies.ResourcesQuantity.null,
+          "baits" => %{}
         })
       end)
     }

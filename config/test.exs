@@ -4,7 +4,7 @@ config :commanded,
   event_store_adapter: Commanded.EventStore.Adapters.EventStore
 
 config :eventstore, EventStore.Storage,
-  serializer: Seelies.JsonSerializer,
+  serializer: Commanded.Serialization.JsonSerializer,
   username: "seelies",
   password: "b?t>J0yD{8<1",
   database: "seelies_event_store_test",
