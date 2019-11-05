@@ -25,9 +25,10 @@ defmodule Conduit.AggregateCase do
         deserialized_events =
           Enum.map(actual_events, fn event ->
             event_type = Commanded.EventStore.TypeProvider.to_string(event)
+
             event
-              |> Commanded.Serialization.JsonSerializer.serialize()
-              |> Commanded.Serialization.JsonSerializer.deserialize(type: event_type)
+            |> Seelies.JsonSerializer.serialize()
+            |> Seelies.JsonSerializer.deserialize(type: event_type)
           end)
 
         IO.inspect(deserialized_events)
